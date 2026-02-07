@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股票数据监控</title>
+    <style>
+        body { 
+            font-family: Arial; 
+            margin: 20px; 
+            background: #f0f2f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { 
+            text-align: center; 
+            color: #333;
+        }
+        .data-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .label { font-weight: bold; color: #555; }
+        .value { 
+            font-size: 1.2em; 
+            font-weight: bold;
+            color: #333;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        .button:hover { background: #0056b3; }
+        #status { 
+            text-align: center; 
+            margin-top: 20px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📈 沪深300与国债收益率监控</h1>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <button class="button" onclick="loadData()">🔄 刷新数据</button>
+            <button class="button" onclick="autoRefresh()">⏱️ 自动刷新</button>
+        </div>
+        
+        <div id="data">
+            <div class="loading">正在加载数据...</div>
+        </div>
+        
+        <div id="status">最后更新: --</div>
+    </div>
+
+    <script>
+        let refreshTimer = null;
+        
+        function formatNumber(num) {
+            if (num === null || num === undefined) return '--';
+            return num.toFixed(2);
+        }
+        
+        async function loadData() {
+            const container = document.getElementById('data');
+            const status = document.getElementById('status');
+            
+            try {
+                container.innerHTML = '<div class="loading">正在获取数据...</div>';
+                
+                const response = await fetch('/api/stockdata');
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.error || '获取数据失败');
+                }
+                
+                const data = result.data;
+                
+                container.innerHTML = `
+                    <div class="data-item">
+                        <span class="label">沪深300指数</span>
+                        <span class="value">${formatNumber(data.hs300_price)}</span>
+                    </div>
+                    
+                    <div class="data-item">
+                        <span class="label">市盈率 (PE)</span>
+                        <span class="value">${formatNumber(data.hs300_pe)}</span>
+                    </div>
+                    
+                    <div class="data-item">
+                        <span class="label">10年期国债收益率</span>
+                        <span class="value">${formatNumber(data.bond_yield_10y)}%</span>
+                    </div>
+                    
+                    <div class="data-item">
+                        <span class="label">盈利收益率</span>
+                        <span class="value">${formatNumber(data.earnings_yield)}%</span>
+                    </div>
+                    
+                    <div class="data-item">
+                        <span class="label">股债利差</span>
+                        <span class="value">${formatNumber(data.stock_bond_spread)}%</span>
+                    </div>
+                `;
+                
+                status.textContent = `最后更新: ${result.timestamp}`;
+                
+            } catch (error) {
+                container.innerHTML = `<div class="loading" style="color: red;">错误: ${error.message}</div>`;
+                console.error('错误:', error);
+            }
+        }
+        
+        function autoRefresh() {
+            if (refreshTimer) {
+                clearInterval(refreshTimer);
+                refreshTimer = null;
+                alert('已停止自动刷新');
+            } else {
+                refreshTimer = setInterval(loadData, 30000);
+                alert('已开启自动刷新（每30秒）');
+                loadData();
+            }
+        }
+        
+        // 页面加载时自动获取数据
+        window.onload = loadData;
+    </script>
+</body>
+</html>
