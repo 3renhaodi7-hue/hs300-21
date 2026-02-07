@@ -1,18 +1,13 @@
 {
-  "builds": [
-    {
-      "src": "api/stockdata.py",
-      "use": "@vercel/python"
+  "functions": {
+    "api/stockdata.py": {
+      "maxDuration": 10
     }
-  ],
-  "routes": [
+  },
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/stockdata"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/api/stockdata",
+      "destination": "/api/stockdata"
     }
   ]
 }
